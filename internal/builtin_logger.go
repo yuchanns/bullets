@@ -9,7 +9,8 @@ import (
 )
 
 type BuiltinLogger struct {
-	Zl *zerolog.Logger
+	Zl     *zerolog.Logger
+	fields map[string]interface{}
 }
 
 func NewBuiltinLogger() *BuiltinLogger {
@@ -20,50 +21,55 @@ func NewBuiltinLogger() *BuiltinLogger {
 	}
 }
 
-func (l BuiltinLogger) Info(ctx context.Context, args ...interface{}) {
+func (l *BuiltinLogger) Fields(fields map[string]interface{}) ILogger {
+	l.fields = fields
+	return l
+}
+
+func (l *BuiltinLogger) Info(ctx context.Context, args ...interface{}) {
 	var b bytes.Buffer
 	_, _ = fmt.Fprint(&b, args...)
-	l.Zl.Info().Msg(b.String())
+	l.Zl.Info().Fields(l.fields).Msg(b.String())
 }
 
-func (l BuiltinLogger) Infof(ctx context.Context, format string, args ...interface{}) {
+func (l *BuiltinLogger) Infof(ctx context.Context, format string, args ...interface{}) {
 	var b bytes.Buffer
 	_, _ = fmt.Fprintf(&b, format, args...)
-	l.Zl.Info().Msg(b.String())
+	l.Zl.Info().Fields(l.fields).Msg(b.String())
 }
 
-func (l BuiltinLogger) Error(ctx context.Context, err error, args ...interface{}) {
+func (l *BuiltinLogger) Error(ctx context.Context, err error, args ...interface{}) {
 	var b bytes.Buffer
 	_, _ = fmt.Fprint(&b, args...)
-	l.Zl.Error().Err(err).Msg(b.String())
+	l.Zl.Error().Fields(l.fields).Err(err).Msg(b.String())
 }
 
-func (l BuiltinLogger) Errorf(ctx context.Context, err error, format string, args ...interface{}) {
+func (l *BuiltinLogger) Errorf(ctx context.Context, err error, format string, args ...interface{}) {
 	var b bytes.Buffer
 	_, _ = fmt.Fprintf(&b, format, args...)
-	l.Zl.Error().Err(err).Msg(b.String())
+	l.Zl.Error().Fields(l.fields).Err(err).Msg(b.String())
 }
 
-func (l BuiltinLogger) Warn(ctx context.Context, args ...interface{}) {
+func (l *BuiltinLogger) Warn(ctx context.Context, args ...interface{}) {
 	var b bytes.Buffer
 	_, _ = fmt.Fprint(&b, args...)
-	l.Zl.Warn().Msg(b.String())
+	l.Zl.Warn().Fields(l.fields).Msg(b.String())
 }
 
-func (l BuiltinLogger) Warnf(ctx context.Context, format string, args ...interface{}) {
+func (l *BuiltinLogger) Warnf(ctx context.Context, format string, args ...interface{}) {
 	var b bytes.Buffer
 	_, _ = fmt.Fprintf(&b, format, args...)
-	l.Zl.Warn().Msg(b.String())
+	l.Zl.Warn().Fields(l.fields).Msg(b.String())
 }
 
-func (l BuiltinLogger) DebugInfo(ctx context.Context, args ...interface{}) {
+func (l *BuiltinLogger) DebugInfo(ctx context.Context, args ...interface{}) {
 	var b bytes.Buffer
 	_, _ = fmt.Fprint(&b, args...)
-	l.Zl.Debug().Msg(b.String())
+	l.Zl.Debug().Fields(l.fields).Msg(b.String())
 }
 
-func (l BuiltinLogger) DebugInfof(ctx context.Context, format string, args ...interface{}) {
+func (l *BuiltinLogger) DebugInfof(ctx context.Context, format string, args ...interface{}) {
 	var b bytes.Buffer
 	_, _ = fmt.Fprintf(&b, format, args...)
-	l.Zl.Debug().Msg(b.String())
+	l.Zl.Debug().Fields(l.fields).Msg(b.String())
 }

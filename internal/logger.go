@@ -3,6 +3,7 @@ package internal
 import "context"
 
 type ILogger interface {
+	Fields(map[string]interface{}) ILogger
 	Info(ctx context.Context, args ...interface{})
 	Infof(ctx context.Context, format string, args ...interface{})
 	Error(ctx context.Context, err error, args ...interface{})

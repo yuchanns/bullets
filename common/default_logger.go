@@ -4,8 +4,8 @@ import (
 	"github.com/yuchanns/bullet/internal"
 )
 
-var DefaultLogger internal.ILogger
+var Logger internal.ILogger
 
 func init() {
-	DefaultLogger = internal.NewBuiltinLogger()
+	Logger = internal.NewBuiltinLogger()
 }
