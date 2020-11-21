@@ -32,10 +32,17 @@ func TestNewDefaultRequestInterceptor(t *testing.T) {
 	engine.POST("/test", func(ctx *gin.Context) {
 		ctx.JSON(http.StatusOK, "")
 	})
+	engine.GET("/test", func(ctx *gin.Context) {
+		ctx.JSON(http.StatusOK, "")
+	})
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest(http.MethodPost, "/test?c=d&e=f", bytes.NewBuffer([]byte("{\"a\":\"b\"}")))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("X-User-Id", "111111")
+	req2, _ := http.NewRequest(http.MethodGet, "/test?a=b&c=d", nil)
+	req2.Header.Set("Content-Type", "application/json")
+	req2.Header.Set("X-User-Id", "111111")
 	engine.ServeHTTP(w, req)
+	engine.ServeHTTP(w, req2)
 }

@@ -39,12 +39,14 @@ func NewRequestInterceptor(logger internal.ILogger) gin.HandlerFunc {
 			internal.Logger.Fields(map[string]interface{}{"data": v}).DebugInfo(ctx, "Query")
 		}
 		// get a new copy of Body
-		bodyCopy, _ := ctx.Request.GetBody()
-		defer bodyCopy.Close()
-		if bodyBuf, err := ioutil.ReadAll(bodyCopy); err == nil {
-			var v map[string]interface{}
-			if err := json.Unmarshal(bodyBuf, &v); err == nil {
-				internal.Logger.Fields(map[string]interface{}{"data": v}).DebugInfo(ctx, "Body")
+		if ctx.Request.GetBody != nil {
+			bodyCopy, _ := ctx.Request.GetBody()
+			defer bodyCopy.Close()
+			if bodyBuf, err := ioutil.ReadAll(bodyCopy); err == nil {
+				var v map[string]interface{}
+				if err := json.Unmarshal(bodyBuf, &v); err == nil {
+					internal.Logger.Fields(map[string]interface{}{"data": v}).DebugInfo(ctx, "Body")
+				}
 			}
 		}
 		ctx.Next()
