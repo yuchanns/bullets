@@ -1,4 +1,4 @@
-module github.com/yuchanns/bullet
+module github.com/yuchanns/bullets
 
 go 1.15
 
