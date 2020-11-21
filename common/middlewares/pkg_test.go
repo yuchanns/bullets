@@ -3,7 +3,7 @@ package middlewares
 import (
 	"bytes"
 	"github.com/gin-gonic/gin"
-	"github.com/yuchanns/bullet/common"
+	"github.com/yuchanns/bullets/common"
 	"log"
 	"net/http"
 	"net/http/httptest"

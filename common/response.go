@@ -2,7 +2,7 @@ package common
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/yuchanns/bullet/internal"
+	"github.com/yuchanns/bullets/internal"
 	"net/http"
 )
 

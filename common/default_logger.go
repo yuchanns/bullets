@@ -1,7 +1,7 @@
 package common
 
 import (
-	"github.com/yuchanns/bullet/internal"
+	"github.com/yuchanns/bullets/internal"
 )
 
 var Logger internal.ILogger
