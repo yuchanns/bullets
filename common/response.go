@@ -36,8 +36,8 @@ func JsonFailWithStack(ctx *gin.Context, err error, data interface{}) {
 // ToFailMsg returns a preset fail content with gin.H
 func ToFailMsg(msg string, data interface{}) gin.H {
 	return gin.H{
-		"code":    http.StatusInternalServerError,
-		"message": msg,
-		"data":    data,
+		"code": http.StatusInternalServerError,
+		"msg":  msg,
+		"data": data,
 	}
 }
