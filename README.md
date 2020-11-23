@@ -7,7 +7,7 @@ package main
 
 import (
     "github.com/gin-gonic/gin"
-    "github.com/yuchanns/bullet/common/middlewares"
+    "github.com/yuchanns/bullets/common/middlewares"
 )
 
 func main() {
@@ -22,7 +22,7 @@ func main() {
 ```go
 package main
 
-import "github.com/yuchanns/bullet/common"
+import "github.com/yuchanns/bullets/common"
 
 func main() {
     common.Logger.
@@ -37,7 +37,7 @@ package main
 import (
     "github.com/gin-gonic/gin"
     "github.com/pkg/errors"
-    "github.com/yuchanns/bullet/common"
+    "github.com/yuchanns/bullets/common"
     "os"
 )
 
