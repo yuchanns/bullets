@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"testing"
+	"time"
 )
 
 func openNotExistFile() error {
@@ -30,4 +31,5 @@ func TestJsonFailWithStack(t *testing.T) {
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest(http.MethodGet, "/regular_err", nil)
 	engine.ServeHTTP(w, req)
+	time.Sleep(time.Second)
 }

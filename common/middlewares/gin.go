@@ -24,6 +24,10 @@ func NewRequestInterceptor(logger internal.ILogger) gin.HandlerFunc {
 		// get a new copy of Header
 		headerCopy := ctx.Request.Header.Clone()
 		headerBuffer := new(bytes.Buffer)
+		var (
+			headerData, bodyData map[string]interface{}
+			queryData            url.Values
+		)
 		if err := headerCopy.Write(headerBuffer); err == nil {
 			s := strings.Split(headerBuffer.String(), "\r\n")
 			v := make(map[string]interface{})
@@ -33,18 +37,30 @@ func NewRequestInterceptor(logger internal.ILogger) gin.HandlerFunc {
 					v[ss[0]] = ss[1]
 				}
 			}
-			internal.Logger.Fields(map[string]interface{}{"data": v}).DebugInfo(ctx, "Header")
+			headerData = v
 		}
 		if v, err := url.ParseQuery(ctx.Request.URL.RawQuery); err == nil {
-			internal.Logger.Fields(map[string]interface{}{"data": v}).DebugInfo(ctx, "Query")
+			queryData = v
 		}
 		if bodyBuf, err := ioutil.ReadAll(ctx.Request.Body); err == nil {
 			ctx.Request.Body = ioutil.NopCloser(bytes.NewBuffer(bodyBuf))
 			var v map[string]interface{}
 			if err := json.Unmarshal(bodyBuf, &v); err == nil {
-				internal.Logger.Fields(map[string]interface{}{"data": v}).DebugInfo(ctx, "Body")
+				bodyData = v
 			}
 		}
+		// log action should be asyncronous
+		go func() {
+			if headerData != nil {
+				internal.Logger.Fields(map[string]interface{}{"data": headerData}).DebugInfo(ctx, "Header")
+			}
+			if queryData != nil {
+				internal.Logger.Fields(map[string]interface{}{"data": queryData}).DebugInfo(ctx, "Query")
+			}
+			if bodyData != nil {
+				internal.Logger.Fields(map[string]interface{}{"data": bodyData}).DebugInfo(ctx, "Body")
+			}
+		}()
 		ctx.Next()
 	}
 }
@@ -73,7 +89,8 @@ func NewPanicInterceptor(logger internal.ILogger) gin.HandlerFunc {
 					stackErr = errors.New(fmt.Sprintf("panic error: %v", err))
 					stack = internal.BuildStack(stackErr, 4)
 				}
-				internal.Logger.Fields(map[string]interface{}{"stack": stack}).Error(ctx, stackErr)
+				// log action should be asyncronous
+				go internal.Logger.Fields(map[string]interface{}{"stack": stack}).Error(ctx, stackErr)
 				common.JsonFail(ctx, stackErr.Error(), nil)
 				ctx.Abort()
 			}

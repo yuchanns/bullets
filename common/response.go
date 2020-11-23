@@ -29,7 +29,8 @@ func JsonFail(ctx *gin.Context, msg string, data interface{}) {
 // then call JsonFail
 func JsonFailWithStack(ctx *gin.Context, err error, data interface{}) {
 	stack := internal.BuildStack(err, 0)
-	Logger.Fields(map[string]interface{}{"stack": stack}).Error(ctx, err)
+	// log action should be asyncronous
+	go Logger.Fields(map[string]interface{}{"stack": stack}).Error(ctx, err)
 	JsonFail(ctx, err.Error(), data)
 }
 
