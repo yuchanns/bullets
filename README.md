@@ -57,3 +57,13 @@ func OpenNotExistFileHandler(ctx *gin.Context) {
 	common.JsonSuccess(ctx, "success", nil)
 }
 ```
+* opentracing
+```go
+closeOpenTracerFunc, openTracerMiddleware, err := BuildOpenTracerInterceptor("testOpenTrace", os.Getenv("AGENT_HOSTPORT"), []byte("api-request-"))
+	if err != nil {
+		panic(err)
+	}
+	defer closeOpenTracerFunc()
+	engine := gin.New()
+	engine.Use(openTracerMiddleware)
+```

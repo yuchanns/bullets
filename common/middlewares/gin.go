@@ -21,34 +21,7 @@ func NewDefaultRequestInterceptor() gin.HandlerFunc {
 func NewRequestInterceptor(logger internal.ILogger) gin.HandlerFunc {
 	internal.Logger = logger
 	return func(ctx *gin.Context) {
-		// get a new copy of Header
-		headerCopy := ctx.Request.Header.Clone()
-		headerBuffer := new(bytes.Buffer)
-		var (
-			headerData, bodyData map[string]interface{}
-			queryData            url.Values
-		)
-		if err := headerCopy.Write(headerBuffer); err == nil {
-			s := strings.Split(headerBuffer.String(), "\r\n")
-			v := make(map[string]interface{})
-			for i := range s {
-				ss := strings.Split(strings.TrimSpace(s[i]), ": ")
-				if len(ss) == 2 {
-					v[ss[0]] = ss[1]
-				}
-			}
-			headerData = v
-		}
-		if v, err := url.ParseQuery(ctx.Request.URL.RawQuery); err == nil {
-			queryData = v
-		}
-		if bodyBuf, err := ioutil.ReadAll(ctx.Request.Body); err == nil {
-			ctx.Request.Body = ioutil.NopCloser(bytes.NewBuffer(bodyBuf))
-			var v map[string]interface{}
-			if err := json.Unmarshal(bodyBuf, &v); err == nil {
-				bodyData = v
-			}
-		}
+		headerData, bodyData, queryData := findDataFromContext(ctx)
 		// log action should be asyncronous
 		go func() {
 			if headerData != nil {
@@ -65,6 +38,40 @@ func NewRequestInterceptor(logger internal.ILogger) gin.HandlerFunc {
 	}
 }
 
+// findDataFromContext find header, body, and query data from *gin.Context
+func findDataFromContext(ctx *gin.Context) (
+	headerData, bodyData map[string]interface{},
+	queryData url.Values,
+) {
+	// get a new copy of Header
+	headerCopy := ctx.Request.Header.Clone()
+	headerBuffer := new(bytes.Buffer)
+	if err := headerCopy.Write(headerBuffer); err == nil {
+		s := strings.Split(headerBuffer.String(), "\r\n")
+		v := make(map[string]interface{})
+		for i := range s {
+			ss := strings.Split(strings.TrimSpace(s[i]), ": ")
+			if len(ss) == 2 {
+				v[ss[0]] = ss[1]
+			}
+		}
+		headerData = v
+	}
+	if v, err := url.ParseQuery(ctx.Request.URL.RawQuery); err == nil {
+		queryData = v
+	}
+	if ctx.Request.Body != nil {
+		if bodyBuf, err := ioutil.ReadAll(ctx.Request.Body); err == nil {
+			ctx.Request.Body = ioutil.NopCloser(bytes.NewBuffer(bodyBuf))
+			var v map[string]interface{}
+			if err := json.Unmarshal(bodyBuf, &v); err == nil {
+				bodyData = v
+			}
+		}
+	}
+	return
+}
+
 // NewDefaultPanicInterceptor returns a gin middleware with a internal.BuiltinLogger
 func NewDefaultPanicInterceptor() gin.HandlerFunc {
 	return NewPanicInterceptor(common.Logger)
@@ -77,18 +84,7 @@ func NewPanicInterceptor(logger internal.ILogger) gin.HandlerFunc {
 		// recover from panic and record
 		defer func() {
 			if msg := recover(); msg != nil {
-				var (
-					stack    []string
-					stackErr error
-				)
-				switch err := msg.(type) {
-				case runtime.Error:
-					stackErr = errors.Wrapf(err, "panic runtime error: %v", err)
-					stack = internal.BuildStack(stackErr, 4)
-				default:
-					stackErr = errors.New(fmt.Sprintf("panic error: %v", err))
-					stack = internal.BuildStack(stackErr, 4)
-				}
+				stack, stackErr := buildStackFromRecover(msg)
 				// log action should be asyncronous
 				go internal.Logger.Fields(map[string]interface{}{"stack": stack}).Error(ctx, stackErr)
 				common.JsonFail(ctx, stackErr.Error(), nil)
@@ -97,4 +93,20 @@ func NewPanicInterceptor(logger internal.ILogger) gin.HandlerFunc {
 		}()
 		ctx.Next()
 	}
+}
+
+// buildStackFromRecover build error with stack from panic
+func buildStackFromRecover(msg interface{}) (
+	stack []string,
+	stackErr error,
+) {
+	switch err := msg.(type) {
+	case runtime.Error:
+		stackErr = errors.Wrapf(err, "panic runtime error: %v", err)
+		stack = internal.BuildStack(stackErr, 4)
+	default:
+		stackErr = errors.New(fmt.Sprintf("panic error: %v", err))
+		stack = internal.BuildStack(stackErr, 4)
+	}
+	return
 }

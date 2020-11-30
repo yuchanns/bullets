@@ -1,7 +1,10 @@
 package common
 
 import (
+	"encoding/json"
 	"github.com/gin-gonic/gin"
+	"github.com/opentracing/opentracing-go"
+	"github.com/opentracing/opentracing-go/log"
 	"github.com/yuchanns/bullets/internal"
 	"net/http"
 )
@@ -31,6 +34,15 @@ func JsonFailWithStack(ctx *gin.Context, err error, data interface{}) {
 	stack := internal.BuildStack(err, 0)
 	// log action should be asyncronous
 	go Logger.Fields(map[string]interface{}{"stack": stack}).Error(ctx, err)
+	// span
+	if cspan, ok := ctx.Get("tracing-context"); ok {
+		if span, ok := cspan.(opentracing.Span); ok {
+			span.LogFields(log.Error(err))
+			if stackJson, err := json.Marshal(map[string]interface{}{"stack": stack}); err == nil {
+				span.LogFields(log.String("stack", string(stackJson)))
+			}
+		}
+	}
 	JsonFail(ctx, err.Error(), data)
 }
 
