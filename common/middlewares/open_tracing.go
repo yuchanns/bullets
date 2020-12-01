@@ -7,6 +7,7 @@ import (
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/opentracing/opentracing-go/log"
+	"github.com/yuchanns/bullets/common"
 )
 
 func openTracer(operationPrefix []byte) gin.HandlerFunc {
@@ -31,6 +32,7 @@ func openTracer(operationPrefix []byte) gin.HandlerFunc {
 				if stackJson, err := json.Marshal(map[string]interface{}{"stack": stack}); err == nil {
 					span.LogFields(log.String("stack", string(stackJson)))
 				}
+				common.JsonFailWithStack(c, stackErr, nil)
 				c.Abort()
 			}
 		}()
