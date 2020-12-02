@@ -31,7 +31,9 @@ func openTracer(operationPrefix []byte) gin.HandlerFunc {
 					span.LogFields(log.Error(stackErr))
 				}
 				if stackJson, err := json.Marshal(map[string]interface{}{"stack": stack}); err == nil {
-					span.LogFields(log.String("stack", string(stackJson)))
+					// stop to report stack in case the limitation of udp max pack size
+					_ = stackJson
+					//span.LogFields(log.String("stack", string(stackJson)))
 				}
 				go internal.Logger.Fields(map[string]interface{}{"stack": stack}).Error(c, stackErr)
 				common.JsonFail(c, stackErr.Error(), nil)

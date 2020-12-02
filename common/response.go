@@ -39,7 +39,9 @@ func JsonFailWithStack(ctx *gin.Context, err error, data interface{}) {
 		if span, ok := cspan.(opentracing.Span); ok {
 			span.LogFields(log.Error(err))
 			if stackJson, err := json.Marshal(map[string]interface{}{"stack": stack}); err == nil {
-				span.LogFields(log.String("stack", string(stackJson)))
+				// stop to report stack in case the limitation of udp max pack size
+				_ = stackJson
+				//span.LogFields(log.String("stack", string(stackJson)))
 			}
 		}
 	}
