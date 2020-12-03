@@ -26,6 +26,7 @@ func openTracer(operationPrefix []byte) gin.HandlerFunc {
 		defer span.Finish()
 		defer func() {
 			if msg := recover(); msg != nil {
+				span.SetTag("error", true)
 				stack, stackErr := buildStackFromRecover(msg)
 				if stackErr != nil {
 					span.LogFields(log.Error(stackErr))
