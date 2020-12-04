@@ -2,6 +2,8 @@ package middlewares
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
 	ginopentracing "github.com/Bose/go-gin-opentracing"
 	"github.com/gin-gonic/gin"
 	"github.com/opentracing/opentracing-go"
@@ -68,7 +70,7 @@ func BuildOpenTracerInterceptor(
 ) {
 	tracer, reporter, closer, err := ginopentracing.InitTracing(serviceName, agentHostPort, ginopentracing.WithEnableInfoLog(true))
 	if err != nil {
-		panic("unable to init tracing")
+		return nil, nil, errors.New(fmt.Sprintf("unable to init tracing:%s", err))
 	}
 	closeFunc = func() {
 		reporter.Close()
