@@ -11,6 +11,16 @@ import (
 
 // JsonSuccess serializes the given struct as JSON into the response body.
 func JsonSuccess(ctx *gin.Context, msg string, data interface{}) {
+	// log action should be asyncronous
+	go Logger.Fields(map[string]interface{}{"data": data}).Info(ctx)
+	// span
+	if cspan, ok := ctx.Get("tracing-context"); ok {
+		if span, ok := cspan.(opentracing.Span); ok {
+			if dataJson, err := json.Marshal(data); err == nil {
+				span.LogFields(log.String("data", string(dataJson)))
+			}
+		}
+	}
 	ctx.JSON(http.StatusOK, ToSuccessMsg(msg, data))
 }
 
@@ -40,9 +50,7 @@ func JsonFailWithStack(ctx *gin.Context, err error, data interface{}) {
 			span.SetTag("error", true)
 			span.LogFields(log.Error(err))
 			if stackJson, err := json.Marshal(map[string]interface{}{"stack": stack}); err == nil {
-				// stop to report stack in case the limitation of udp max pack size
-				_ = stackJson
-				//span.LogFields(log.String("stack", string(stackJson)))
+				span.LogFields(log.String("stack", string(stackJson)))
 			}
 		}
 	}

@@ -38,9 +38,7 @@ func openTracer(operationPrefix []byte) gin.HandlerFunc {
 					span.LogFields(log.Error(stackErr))
 				}
 				if stackJson, err := json.Marshal(map[string]interface{}{"stack": stack}); err == nil {
-					// stop to report stack in case the limitation of udp max pack size
-					_ = stackJson
-					//span.LogFields(log.String("stack", string(stackJson)))
+					span.LogFields(log.String("stack", string(stackJson)))
 				}
 				go internal.Logger.Fields(map[string]interface{}{"stack": stack}).Error(c, stackErr)
 				common.JsonFail(c, stackErr.Error(), nil)
@@ -91,6 +89,7 @@ func BuildOpenTracerInterceptor(
 	middleware gin.HandlerFunc,
 	err error,
 ) {
+	internal.Logger = common.Logger
 	url := strings.Join([]string{collectorHost, "api/traces?format=jaeger.thrift"}, "/")
 	tracer, reporter, closer, err := InitTracing(serviceName, url)
 	if err != nil {

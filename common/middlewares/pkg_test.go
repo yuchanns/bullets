@@ -5,6 +5,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 	"github.com/yuchanns/bullets/common"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -64,10 +65,10 @@ func TestBuildOpenTracerInterceptor(t *testing.T) {
 	engine := gin.New()
 	engine.Use(openTracerMiddleware)
 	engine.POST("/test", func(ctx *gin.Context) {
-		ctx.JSON(http.StatusOK, "")
+		common.JsonSuccess(ctx, "success", gin.H{"hello": "world"})
 	})
 	engine.GET("/test", func(ctx *gin.Context) {
-		ctx.JSON(http.StatusOK, "")
+		common.JsonSuccess(ctx, "success", gin.H{"hello": "world"})
 	})
 	engine.GET("/panic", func(ctx *gin.Context) {
 		var err error
