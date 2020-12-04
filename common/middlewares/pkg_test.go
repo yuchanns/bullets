@@ -5,7 +5,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 	"github.com/yuchanns/bullets/common"
-	"log"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -57,7 +56,7 @@ func TestNewDefaultRequestInterceptor(t *testing.T) {
 }
 
 func TestBuildOpenTracerInterceptor(t *testing.T) {
-	closeOpenTracerFunc, openTracerMiddleware, err := BuildOpenTracerInterceptor("testOpenTrace", os.Getenv("AGENT_HOSTPORT"), []byte("api-request-"))
+	closeOpenTracerFunc, openTracerMiddleware, err := BuildOpenTracerInterceptor("testOpenTrace", os.Getenv("COLLECTOR_HOST"), []byte("api-request-"))
 	if err != nil {
 		panic(err)
 	}

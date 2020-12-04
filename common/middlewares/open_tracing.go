@@ -9,8 +9,12 @@ import (
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/opentracing/opentracing-go/log"
+	"github.com/uber/jaeger-client-go"
+	transport2 "github.com/uber/jaeger-client-go/transport"
 	"github.com/yuchanns/bullets/common"
 	"github.com/yuchanns/bullets/internal"
+	"io"
+	"strings"
 )
 
 func openTracer(operationPrefix []byte) gin.HandlerFunc {
@@ -60,15 +64,35 @@ func openTracer(operationPrefix []byte) gin.HandlerFunc {
 	}
 }
 
+// InitTracing - init opentracing with use http
+func InitTracing(serviceName string, url string) (
+	tracer opentracing.Tracer,
+	reporter jaeger.Reporter,
+	closer io.Closer,
+	err error) {
+	transport := transport2.NewHTTPTransport(url)
+	reporter = jaeger.NewRemoteReporter(transport)
+
+	var sampler jaeger.Sampler
+	sampler = jaeger.NewConstSampler(true)
+
+	tracer, closer = jaeger.NewTracer(serviceName,
+		sampler,
+		reporter,
+	)
+	return tracer, reporter, closer, nil
+}
+
 func BuildOpenTracerInterceptor(
-	serviceName, agentHostPort string,
+	serviceName, collectorHost string,
 	operationPrefix []byte,
 ) (
 	closeFunc func(),
 	middleware gin.HandlerFunc,
 	err error,
 ) {
-	tracer, reporter, closer, err := ginopentracing.InitTracing(serviceName, agentHostPort, ginopentracing.WithEnableInfoLog(true))
+	url := strings.Join([]string{collectorHost, "api/traces?format=jaeger.thrift"}, "/")
+	tracer, reporter, closer, err := InitTracing(serviceName, url)
 	if err != nil {
 		return nil, nil, errors.New(fmt.Sprintf("unable to init tracing:%s", err))
 	}
