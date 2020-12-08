@@ -79,16 +79,29 @@ func TestBuildOpenTracerInterceptor(t *testing.T) {
 	})
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest(http.MethodPost, "/test?c=d&e=f", bytes.NewBuffer([]byte("{\"a\":\"b\"}")))
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("X-User-Id", "111111")
-	req2, _ := http.NewRequest(http.MethodGet, "/test?a=b&c=d", nil)
-	req2.Header.Set("Content-Type", "application/json")
-	req2.Header.Set("X-User-Id", "111111")
-	req3, _ := http.NewRequest(http.MethodGet, "/panic", nil)
-	req4, _ := http.NewRequest(http.MethodGet, "/regular_err", nil)
-	engine.ServeHTTP(w, req)
-	engine.ServeHTTP(w, req2)
-	engine.ServeHTTP(w, req3)
-	engine.ServeHTTP(w, req4)
+	reqTable := []func() *http.Request{
+		func() *http.Request {
+			req, _ := http.NewRequest(http.MethodPost, "/test?c=d&e=f", bytes.NewBuffer([]byte("{\"a\":\"b\"}")))
+			req.Header.Set("Content-Type", "application/json")
+			req.Header.Set("X-User-Id", "111111")
+			return req
+		},
+		func() *http.Request {
+			req, _ := http.NewRequest(http.MethodGet, "/test?a=b&c=d", nil)
+			req.Header.Set("Content-Type", "application/json")
+			req.Header.Set("X-User-Id", "111111")
+			return req
+		},
+		func() *http.Request {
+			req, _ := http.NewRequest(http.MethodGet, "/panic", nil)
+			return req
+		},
+		func() *http.Request {
+			req, _ := http.NewRequest(http.MethodGet, "/regular_err", nil)
+			return req
+		},
+	}
+	for i := range reqTable {
+		engine.ServeHTTP(w, reqTable[i]())
+	}
 }
