@@ -56,11 +56,7 @@ func TestNewDefaultRequestInterceptor(t *testing.T) {
 	time.Sleep(time.Second)
 }
 
-func TestBuildOpenTracerInterceptor(t *testing.T) {
-	closeOpenTracerFunc, openTracerMiddleware, err := BuildOpenTracerInterceptor("testOpenTrace", os.Getenv("COLLECTOR_HOST"), []byte("api-request-"))
-	if err != nil {
-		panic(err)
-	}
+func testBuildOpenTracerInterceptor(t *testing.T, closeOpenTracerFunc func(), openTracerMiddleware gin.HandlerFunc) {
 	defer closeOpenTracerFunc()
 	engine := gin.New()
 	engine.Use(openTracerMiddleware)
@@ -104,4 +100,20 @@ func TestBuildOpenTracerInterceptor(t *testing.T) {
 	for i := range reqTable {
 		engine.ServeHTTP(w, reqTable[i]())
 	}
+}
+
+func TestBuildOpenTracerCollectorInterceptor(t *testing.T) {
+	closeOpenTracerFunc, openTracerMiddleware, err := BuildOpenTracerCollectorInterceptor("testOpenTraceCollector", os.Getenv("COLLECTOR_HOST"), []byte("api-request-"))
+	if err != nil {
+		panic(err)
+	}
+	testBuildOpenTracerInterceptor(t, closeOpenTracerFunc, openTracerMiddleware)
+}
+
+func TestBuildOpenTracerAgentInterceptor(t *testing.T) {
+	closeOpenTracerFunc, openTracerMiddleware, err := BuildOpenTracerInterceptor("testOpenTraceAgent", os.Getenv("AGENT_HOST"), []byte("api-request-"))
+	if err != nil {
+		panic(err)
+	}
+	testBuildOpenTracerInterceptor(t, closeOpenTracerFunc, openTracerMiddleware)
 }

@@ -81,20 +81,25 @@ func InitTracing(serviceName string, url string) (
 	return tracer, reporter, closer, nil
 }
 
+// BuildOpenTracerInterceptor is an alias for BuildOpenTracerAgentInterceptor
 func BuildOpenTracerInterceptor(
-	serviceName, collectorHost string,
+	serviceName, agentHostPort string,
 	operationPrefix []byte,
 ) (
 	closeFunc func(),
 	middleware gin.HandlerFunc,
 	err error,
 ) {
+	return BuildOpenTracerAgentInterceptor(serviceName, agentHostPort, operationPrefix)
+}
+
+// buildWithInitTracing is the common part of BuildOpenTracerCollectorInterceptor and BuildOpenTracerAgentInterceptor
+func buildWithInitTracing(tracer opentracing.Tracer, reporter jaeger.Reporter, closer io.Closer, operationPrefix []byte) (
+	closeFunc func(),
+	middleware gin.HandlerFunc,
+	err error,
+) {
 	internal.Logger = common.Logger
-	url := strings.Join([]string{collectorHost, "api/traces?format=jaeger.thrift"}, "/")
-	tracer, reporter, closer, err := InitTracing(serviceName, url)
-	if err != nil {
-		return nil, nil, errors.New(fmt.Sprintf("unable to init tracing:%s", err))
-	}
 	closeFunc = func() {
 		reporter.Close()
 		closer.Close()
@@ -102,4 +107,37 @@ func BuildOpenTracerInterceptor(
 	opentracing.SetGlobalTracer(tracer)
 	middleware = openTracer(operationPrefix)
 	return
+}
+
+// BuildOpenTracerCollectorInterceptor create an interceptor using the jaeger collector directly
+func BuildOpenTracerCollectorInterceptor(
+	serviceName, collectorHost string,
+	operationPrefix []byte,
+) (
+	closeFunc func(),
+	middleware gin.HandlerFunc,
+	err error,
+) {
+	url := strings.Join([]string{collectorHost, "api/traces?format=jaeger.thrift"}, "/")
+	tracer, reporter, closer, err := InitTracing(serviceName, url)
+	if err != nil {
+		return nil, nil, errors.New(fmt.Sprintf("unable to init collector tracing:%s", err))
+	}
+	return buildWithInitTracing(tracer, reporter, closer, operationPrefix)
+}
+
+// BuildOpenTracerAgentInterceptor create an interceptor using the jaeger agent
+func BuildOpenTracerAgentInterceptor(
+	serviceName, agentHostPort string,
+	operationPrefix []byte,
+) (
+	closeFunc func(),
+	middleware gin.HandlerFunc,
+	err error,
+) {
+	tracer, reporter, closer, err := ginopentracing.InitTracing(serviceName, agentHostPort, ginopentracing.WithEnableInfoLog(true))
+	if err != nil {
+		return nil, nil, errors.New(fmt.Sprintf("unable to init agent tracing:%s", err))
+	}
+	return buildWithInitTracing(tracer, reporter, closer, operationPrefix)
 }
