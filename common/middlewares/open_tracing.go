@@ -24,10 +24,10 @@ func openTracer(operationPrefix []byte) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var span opentracing.Span
 		if cspan, ok := c.Get("tracing-context"); ok {
-			span = ginopentracing.StartSpanWithParent(cspan.(opentracing.Span).Context(), string(operationPrefix)+c.Request.Method, c.Request.Method, c.Request.URL.Path)
+			span = ginopentracing.StartSpanWithParent(cspan.(opentracing.Span).Context(), c.Request.Method+":"+c.Request.URL.Path, c.Request.Method, c.Request.URL.Path)
 
 		} else {
-			span = ginopentracing.StartSpanWithHeader(&c.Request.Header, string(operationPrefix)+c.Request.Method, c.Request.Method, c.Request.URL.Path)
+			span = ginopentracing.StartSpanWithHeader(&c.Request.Header, c.Request.Method+":"+c.Request.URL.Path, c.Request.Method, c.Request.URL.Path)
 		}
 		defer span.Finish()
 		defer func() {
