@@ -24,6 +24,7 @@ func TestNewDefaultPanicInterceptor(t *testing.T) {
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest(http.MethodGet, "/panic", nil)
 	engine.ServeHTTP(w, req)
+	t.Log("body", w.Body.String())
 	if w.Body.String() != "{\"code\":500,\"data\":null,\"message\":\"panic runtime error: runtime error: invalid memory address or nil pointer dereference: runtime error: invalid memory address or nil pointer dereference\"}" {
 		log.Fatal("return response is not equal as expect")
 	}
@@ -56,6 +57,10 @@ func TestNewDefaultRequestInterceptor(t *testing.T) {
 	time.Sleep(time.Second)
 }
 
+func regularError() error {
+	return errors.Errorf("a regular error")
+}
+
 func testBuildOpenTracerInterceptor(t *testing.T, closeOpenTracerFunc func(), openTracerMiddleware gin.HandlerFunc) {
 	defer closeOpenTracerFunc()
 	engine := gin.New()
@@ -66,12 +71,16 @@ func testBuildOpenTracerInterceptor(t *testing.T, closeOpenTracerFunc func(), op
 	engine.GET("/test", func(ctx *gin.Context) {
 		common.JsonSuccess(ctx, "success", gin.H{"hello": "world"})
 	})
-	engine.GET("/panic", func(ctx *gin.Context) {
+	engine.GET("/panic_runtime", func(ctx *gin.Context) {
 		var err error
 		common.JsonFail(ctx, err.Error(), nil)
 	})
 	engine.GET("/regular_err", func(ctx *gin.Context) {
-		common.JsonFailWithStack(ctx, errors.Errorf("a regular error"), nil)
+		err := regularError()
+		common.JsonFailWithStack(ctx, err, nil)
+	})
+	engine.GET("/panic", func(ctx *gin.Context) {
+		panic("a panic error")
 	})
 
 	w := httptest.NewRecorder()
@@ -94,6 +103,10 @@ func testBuildOpenTracerInterceptor(t *testing.T, closeOpenTracerFunc func(), op
 		},
 		func() *http.Request {
 			req, _ := http.NewRequest(http.MethodGet, "/regular_err", nil)
+			return req
+		},
+		func() *http.Request {
+			req, _ := http.NewRequest(http.MethodGet, "/panic_runtime", nil)
 			return req
 		},
 	}

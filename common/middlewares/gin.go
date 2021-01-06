@@ -103,10 +103,10 @@ func buildStackFromRecover(msg interface{}) (
 	switch err := msg.(type) {
 	case runtime.Error:
 		stackErr = errors.Wrapf(err, "panic runtime error: %v", err)
-		stack = internal.BuildStack(stackErr, 4)
+		stack = internal.BuildStack(stackErr, 5)
 	default:
 		stackErr = errors.New(fmt.Sprintf("panic error: %v", err))
-		stack = internal.BuildStack(stackErr, 4)
+		stack = internal.BuildStack(stackErr, 3)
 	}
 	return
 }
