@@ -19,7 +19,7 @@ func openNotExistFile() error {
 
 func openNotExistFileHandler(ctx *gin.Context) {
 	if err := openNotExistFile(); err != nil {
-		JsonFailWithStack(ctx, err, nil)
+		JsonFailWithStack(ctx, err, nil, http.StatusNotFound)
 		return
 	}
 	JsonSuccess(ctx, "success", nil)
@@ -31,5 +31,6 @@ func TestJsonFailWithStack(t *testing.T) {
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest(http.MethodGet, "/regular_err", nil)
 	engine.ServeHTTP(w, req)
+	t.Log("response:", w.Body.String())
 	time.Sleep(time.Second)
 }

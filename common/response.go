@@ -10,7 +10,7 @@ import (
 )
 
 // JsonSuccess serializes the given struct as JSON into the response body.
-func JsonSuccess(ctx *gin.Context, msg string, data interface{}) {
+func JsonSuccess(ctx *gin.Context, msg string, data interface{}, codes ...int) {
 	// log action should be asyncronous
 	go Logger.Fields(map[string]interface{}{"data": data}).Info(ctx)
 	// span
@@ -21,26 +21,30 @@ func JsonSuccess(ctx *gin.Context, msg string, data interface{}) {
 			}
 		}
 	}
-	ctx.JSON(http.StatusOK, ToSuccessMsg(msg, data))
+	ctx.JSON(http.StatusOK, ToSuccessMsg(msg, data, codes...))
 }
 
 // ToSuccessMsg returns a preset success content with gin.H
-func ToSuccessMsg(msg string, data interface{}) gin.H {
+func ToSuccessMsg(msg string, data interface{}, codes ...int) gin.H {
+	code := http.StatusOK
+	if len(codes) > 0 {
+		code = codes[0]
+	}
 	return gin.H{
-		"code": http.StatusOK,
+		"code": code,
 		"msg":  msg,
 		"data": data,
 	}
 }
 
 // JsonFail serializes the given struct as JSON into the response body.
-func JsonFail(ctx *gin.Context, msg string, data interface{}) {
-	ctx.JSON(http.StatusOK, ToFailMsg(msg, data))
+func JsonFail(ctx *gin.Context, msg string, data interface{}, codes ...int) {
+	ctx.JSON(http.StatusOK, ToFailMsg(msg, data, codes...))
 }
 
 // JsonFailWithStack build a stack of given error and will be logged by Logger
 // then call JsonFail
-func JsonFailWithStack(ctx *gin.Context, err error, data interface{}) {
+func JsonFailWithStack(ctx *gin.Context, err error, data interface{}, codes ...int) {
 	stack := internal.BuildStack(err, 0)
 	// log action should be asyncronous
 	go Logger.Fields(map[string]interface{}{"stack": stack}).Error(ctx, err)
@@ -54,13 +58,17 @@ func JsonFailWithStack(ctx *gin.Context, err error, data interface{}) {
 			}
 		}
 	}
-	JsonFail(ctx, err.Error(), data)
+	JsonFail(ctx, err.Error(), data, codes...)
 }
 
 // ToFailMsg returns a preset fail content with gin.H
-func ToFailMsg(msg string, data interface{}) gin.H {
+func ToFailMsg(msg string, data interface{}, codes ...int) gin.H {
+	code := http.StatusInternalServerError
+	if len(codes) > 0 {
+		code = codes[0]
+	}
 	return gin.H{
-		"code": http.StatusInternalServerError,
+		"code": code,
 		"msg":  msg,
 		"data": data,
 	}
